@@ -1,0 +1,13 @@
+{
+    "compilerOptions": {
+        "allowJs": true,
+        "target": "es6",
+        "module": "es6",
+        "baseUrl": ".",
+        "rootDir": ".",
+        "strict": false,
+        "moduleResolution": "node",
+        "esModuleInterop":true,
+        "jsx": "react-jsx"
+    }
+}

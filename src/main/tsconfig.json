@@ -1,0 +1,12 @@
+{
+    "compilerOptions": {
+        "allowJs": true,
+        "target": "es6",
+        "module": "commonjs",
+        "baseUrl": ".",
+        "rootDir": ".",
+        "strict": false,
+        "moduleResolution": "node",
+        "outDir": "../../main_dist",
+    }
+}
