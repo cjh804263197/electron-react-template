@@ -1,0 +1,11 @@
+.app-page {
+    height: 100%;
+    padding: 24px;
+}
+
+.pick-btn {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+}

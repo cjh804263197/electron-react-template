@@ -7,14 +7,12 @@ const { say } = require('cfonts')
 const { spawn } = require('child_process')
 const webpack = require('webpack')
 const WebpackDevServer = require('webpack-dev-server')
-const webpackHotMiddleware = require('webpack-hot-middleware')
 
 const mainConfig = require('./webpack.main.conf')
 const rendererConfig = require('./webpack.renderer.conf')
 
 let electronProcess = null
 let manualRestart = false
-let hotMiddleware
 
 function logStats (proc, data) {
   let log = ''
@@ -41,10 +39,6 @@ function logStats (proc, data) {
 function startRenderer () {
   return new Promise((resolve, reject) => {
     const compiler = webpack(rendererConfig)
-    hotMiddleware = webpackHotMiddleware(compiler, {
-      log: false,
-      heartbeat: 2500
-    })
 
     compiler.hooks.afterDone.tap('afterDone', stats => {
         logStats('Renderer', stats)
@@ -68,7 +62,6 @@ function startMain () {
 
     compiler.hooks.watchRun.tapAsync('watch-run', (compilation, done) => {
       logStats('Main', chalk.white.bold('compiling...'))
-      hotMiddleware.publish({ action: 'compiling' })
       done()
     })
 

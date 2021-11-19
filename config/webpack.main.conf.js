@@ -2,10 +2,13 @@ const path = require('path');
 
 module.exports = {
     mode: process.env.NODE_ENV,
-    entry: path.resolve(__dirname, '../src/main/index.ts'),
+    entry: {
+        index: path.resolve(__dirname, '../src/main/index.ts'),
+        preload: path.join(__dirname, '../src/main/preload.js'),
+    },
     output: {
         path: path.resolve(__dirname, '../dist/main'),
-        filename: 'index.js'
+        filename: '[name].js'
     },
     target: "electron-main", // 让webpack知道你当前是在打包electron主线程代码
     module: {

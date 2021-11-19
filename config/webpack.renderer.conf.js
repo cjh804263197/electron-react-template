@@ -9,6 +9,9 @@ const config = {
         app: path.resolve(__dirname, '../src/renderer/index.tsx')
     },
     target: ['web', 'electron-renderer'],
+    externals: {
+        electron: 'electron'
+    },
     resolve: {
         extensions: ['.js', '.jsx', '.json', '.ts', '.tsx'],
     },
@@ -24,27 +27,77 @@ const config = {
                 exclude: /node_modules/,
                 loader: 'ts-loader'
             },
+            // {
+            //     test: /\.s?css$/,
+            //     use: [
+            //     'style-loader',
+            //     {
+            //         loader: 'css-loader',
+            //         options: {
+            //         modules: true,
+            //         sourceMap: true,
+            //         importLoaders: 1,
+            //         },
+            //     },
+            //     'sass-loader',
+            //     ],
+            //     include: /\.module\.s?(c|a)ss$/,
+            //     exclude: /node_modules/
+            // },
+            // {
+            //     test: /\.s?css$/,
+            //     use: ['style-loader', 'css-loader', 'sass-loader'],
+            //     exclude: [/\.module\.s?(c|a)ss$/, /node_modules/],
+            // }
             {
-                test: /\.s?css$/,
-                use: [
-                'style-loader',
-                {
-                    loader: 'css-loader',
-                    options: {
-                    modules: true,
-                    sourceMap: true,
-                    importLoaders: 1,
-                    },
-                },
-                'sass-loader',
-                ],
-                include: /\.module\.s?(c|a)ss$/,
-            },
-            {
-                test: /\.s?css$/,
-                use: ['style-loader', 'css-loader', 'sass-loader'],
-                exclude: /\.module\.s?(c|a)ss$/,
-            }
+				test: /\.scss$/,
+				exclude: [/node_modules/],
+				oneOf: [
+					{
+						test: /\.module\.scss$/,
+						use: [
+							'style-loader',
+							{
+								loader: "css-loader",
+								options: {
+									modules: {
+										localIdentName:
+											"[path][name]__[local]--[hash:base64:5]",
+									},
+									// sourceMap: DEV,
+								},
+							},
+							{
+								loader: "sass-loader",
+								options: {
+									// sourceMap: DEV,
+								},
+							},
+						],
+					},
+					{
+						use: [
+							'style-loader',
+							{
+								loader: "css-loader",
+								options: {
+									// sourceMap: DEV,
+								},
+							},
+							{
+								loader: "sass-loader",
+								options: {
+									// sourceMap: DEV,
+								},
+							},
+						],
+					},
+				],
+			},
+			{
+				test: /\.css$/,
+				use: ["style-loader", "css-loader"],
+			},
         ]
     },
     plugins: [
