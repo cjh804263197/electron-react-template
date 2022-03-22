@@ -3,9 +3,17 @@
     padding: 24px;
 }
 
+.app-page > img {
+    width: 33px;
+    height: 33px;
+    float: left;
+    margin-right: 8px;
+}
+
 .pick-btn {
-    position: absolute;
-    left: 50%;
-    top: 50%;
-    transform: translate(-50%, -50%);
+    /* position: absolute;
+    right: 0;
+    top: 0; */
+    /* bottom: auto; */
+    /* transform: translate(-50%, -50%); */
 }

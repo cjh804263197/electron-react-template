@@ -1,4 +1,5 @@
 const path = require('path');
+const Dotenv = require('dotenv-webpack');
 
 module.exports = {
     mode: process.env.NODE_ENV,
@@ -11,6 +12,9 @@ module.exports = {
         filename: '[name].js'
     },
     target: "electron-main", // 让webpack知道你当前是在打包electron主线程代码
+    externals: {
+        sharp: 'commonjs sharp' // see https://github.com/lovell/sharp/issues/2350#issuecomment-762977956
+    },
     module: {
         rules: [
             {
@@ -24,5 +28,10 @@ module.exports = {
                 loader: 'babel-loader'
             }
         ]
-    }
+    },
+    plugins: [
+        new Dotenv({
+            path: path.resolve(__dirname, '../env/', `${process.env.NODE_ENV}.env`)
+        })
+    ]
 };

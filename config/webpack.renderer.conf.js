@@ -18,7 +18,7 @@ const config = {
     output: {
         path: path.resolve(__dirname, '../dist/renderer'),
         filename: isDev ? 'renderer.dev.js' : 'app.bundle.js',
-        publicPath: '/'
+        publicPath: '.'
     },
     module: {
         rules: [

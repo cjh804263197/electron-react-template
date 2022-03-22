@@ -38,7 +38,19 @@ function logStats (proc, data) {
 
 function startRenderer () {
   return new Promise((resolve, reject) => {
-    const compiler = webpack(rendererConfig)
+    const compiler = webpack(rendererConfig, (err, stats) =>
+    {
+      if (err)
+      {
+        console.error('编译失败1', err)
+        return
+      }
+
+      if (stats.hasErrors()) {
+        return console.error('编译失败2', err)
+      }
+      console.log('编译完成')
+    })
 
     compiler.hooks.afterDone.tap('afterDone', stats => {
         logStats('Renderer', stats)

@@ -1,5 +1,20 @@
 import { app, BrowserWindow, ipcMain, dialog } from 'electron';
 import * as path from 'path';
+import * as fs from 'fs';
+import * as sharp from 'sharp';
+
+type IResize = Pick<sharp.ResizeOptions, "width" | "height">
+
+type IJpeg = Pick<sharp.JpegOptions, "quality">
+
+interface ProcessImgData
+{
+    sourceDir: string;
+    targetDir: string;
+    jpeg: IJpeg;
+    corp?: sharp.Region;
+    resize?: IResize;
+}
 
 function createWindow () {
     const win = new BrowserWindow({
@@ -16,10 +31,15 @@ function createWindow () {
 
     win.webContents.once('dom-ready', () =>
     {
-        win.webContents.openDevTools();
+        if (process.env.NODE_ENV === 'development')
+        {
+            win.webContents.openDevTools();
+        }
     });
 
-    win.loadURL('http://localhost:3002');
+    const url = process.env.NODE_ENV === 'development' ? 'http://localhost:3002' : path.join('file://', process.resourcesPath, '/app/dist/renderer/index.html')
+
+    win.loadURL(url);
 }
 
 /**
@@ -38,6 +58,51 @@ function bindIPCEvents(browserWindow: Electron.BrowserWindow) {
         {
             console.error('openDirectory err =>', err)
             event.returnValue = null
+        })
+    })
+
+    ipcMain.on("PROCESS_IMGS", (event, data: ProcessImgData) =>
+    {
+        const { sourceDir, targetDir, jpeg, corp, resize } = data
+        fs.readdir(sourceDir, null, (err, files) =>
+        {
+            if (err)
+            {
+                browserWindow.webContents.send("PROCESS_IMGS_FAIL", err)
+                return
+            }
+            const resFiles = files.filter(file => file.endsWith('.png') || file.endsWith('.PNG'))
+            if (!resFiles.length)
+            {
+                browserWindow.webContents.send("PROCESS_IMGS_FAIL", new Error('没有符合标准的图片'))
+                return
+            }
+            const promises = resFiles.map(file =>
+            {
+                let sp = sharp(path.join(sourceDir, file))
+                if (corp)
+                {
+                    sp = sp.extract(corp)
+                }
+                if (resize)
+                {
+                    sp = sp.resize({
+                        width: resize.width || undefined,
+                        height: resize.height || undefined,
+                    })
+                }
+                return sp.jpeg({ quality: Number(jpeg.quality) }).toFile(path.join(targetDir, file.replace('.png', '.jpg')))
+            })
+            Promise.all(promises)
+            .then(res =>
+            {
+                browserWindow.webContents.send("PROCESS_IMGS_SUCCESS", resFiles)
+            })
+            .catch(err =>
+            {
+                browserWindow.webContents.send("PROCESS_IMGS_FAIL", err)
+            })
+            
         })
     })
 }
