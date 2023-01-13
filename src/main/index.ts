@@ -2,6 +2,7 @@ import { app, BrowserWindow, ipcMain, dialog } from 'electron';
 import * as path from 'path';
 import * as fs from 'fs';
 import * as sharp from 'sharp';
+import { searchImage, corpImage } from './corp' 
 
 type IResize = Pick<sharp.ResizeOptions, "width" | "height">
 
@@ -12,7 +13,6 @@ interface ProcessImgData
     sourceDir: string;
     targetDir: string;
     jpeg: IJpeg;
-    corp?: sharp.Region;
     resize?: IResize;
 }
 
@@ -61,49 +61,54 @@ function bindIPCEvents(browserWindow: Electron.BrowserWindow) {
         })
     })
 
-    ipcMain.on("PROCESS_IMGS", (event, data: ProcessImgData) =>
+    ipcMain.on("PROCESS_IMGS", async (event, data: ProcessImgData) =>
     {
-        const { sourceDir, targetDir, jpeg, corp, resize } = data
-        fs.readdir(sourceDir, null, (err, files) =>
-        {
-            if (err)
-            {
-                browserWindow.webContents.send("PROCESS_IMGS_FAIL", err)
-                return
-            }
-            const resFiles = files.filter(file => file.endsWith('.png') || file.endsWith('.PNG'))
-            if (!resFiles.length)
+        const { sourceDir, targetDir, jpeg, resize } = data
+        let totalCount = 0;
+        let successCount = 0;
+        let failCount = 0;
+        try {
+            const targetImgs = await searchImage(sourceDir);
+
+            if (!targetImgs.length)
             {
                 browserWindow.webContents.send("PROCESS_IMGS_FAIL", new Error('没有符合标准的图片'))
                 return
             }
-            const promises = resFiles.map(file =>
-            {
-                let sp = sharp(path.join(sourceDir, file))
-                if (corp)
-                {
-                    sp = sp.extract(corp)
-                }
-                if (resize)
-                {
-                    sp = sp.resize({
-                        width: resize.width || undefined,
-                        height: resize.height || undefined,
+
+            totalCount = targetImgs.length;
+
+            browserWindow.webContents.send("PROCESS_IMGS_PROGRESS", {
+                totalCount,
+                successCount,
+                failCount,
+            })
+
+            for (const targetImg of targetImgs) {
+                await corpImage(targetImg.path, targetImg.name, targetDir, jpeg, resize)
+                .then(() => {
+                    successCount++;
+                    browserWindow.webContents.send("PROCESS_IMGS_PROGRESS", {
+                        totalCount,
+                        successCount,
+                        failCount,
                     })
-                }
-                return sp.jpeg({ quality: Number(jpeg.quality) }).toFile(path.join(targetDir, file.replace('.png', '.jpg')))
-            })
-            Promise.all(promises)
-            .then(res =>
-            {
-                browserWindow.webContents.send("PROCESS_IMGS_SUCCESS", resFiles)
-            })
-            .catch(err =>
-            {
-                browserWindow.webContents.send("PROCESS_IMGS_FAIL", err)
-            })
-            
-        })
+                })
+                .catch(err => {
+                    failCount++;
+                    browserWindow.webContents.send("PROCESS_IMGS_PROGRESS", {
+                        totalCount,
+                        successCount,
+                        failCount,
+                    })
+                })
+            }
+
+            browserWindow.webContents.send("PROCESS_IMGS_SUCCESS", targetImgs)
+        }
+        catch (err) {
+            browserWindow.webContents.send("PROCESS_IMGS_FAIL", err)
+        }
     })
 }
 

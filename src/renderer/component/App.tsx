@@ -26,13 +26,16 @@ interface FormData
     resize?: IResize;
 }
 
-function processImg(data: FormData)
+function processImg(data: FormData, { onProgress })
 {
     return new Promise((resolve, reject) =>
     {
         try
         {
             ipcRenderer.send("PROCESS_IMGS", data)
+            ipcRenderer.on("PROCESS_IMGS_PROGRESS", (event, progress) => {
+                onProgress?.(progress)
+            })
             ipcRenderer.once("PROCESS_IMGS_FAIL", (event, err) =>
             {
                 reject(err)
@@ -71,10 +74,14 @@ const App: React.FunctionComponent<Props> = function (props)
         form.submit();
     }, [])
 
+    const handleProgress = useCallback(({ totalCount, successCount, failCount }) => {
+
+    }, [])
+
     const handleFormFinish = useCallback((values: FormData) =>
     {
         setLoading(true)
-        processImg(values)
+        processImg(values, { onProgress: handleProgress })
         .then(files =>
         {
             console.log('files => ', files)
@@ -90,7 +97,7 @@ const App: React.FunctionComponent<Props> = function (props)
             setLoading(false)
         })
         
-    }, [])
+    }, [handleProgress])
 
     return (
         <div className="app-page">
