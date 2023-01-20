@@ -1,5 +1,5 @@
 import React, { useCallback, useState } from 'react'
-import { Checkbox, Form, InputNumber, Row, Col, Button, message, Spin } from 'antd';
+import { Checkbox, Form, InputNumber, Row, Col, Button, message, Spin, Progress } from 'antd';
 import Electron from 'electron';
 import { Region, ResizeOptions, JpegOptions } from 'sharp';
 import DirPicker from './Elements/DirPicker';
@@ -16,6 +16,13 @@ interface Props
 type IResize = Pick<ResizeOptions, "width" | "height">
 
 type IJpeg = Pick<JpegOptions, "quality">
+
+interface IProgress {
+    progress: number;
+    sucess: number;
+    failed: number;
+    total: number;
+}
 
 interface FormData
 {
@@ -63,6 +70,8 @@ const App: React.FunctionComponent<Props> = function (props)
 
     const [loading, setLoading] = useState<boolean>(false)
 
+    const [progress, setProgress] = useState<IProgress>({ progress: 0, sucess: 0, failed: 0, total: 0 })
+
     const handlePickDirClick = useCallback((cb: (dir: string) => void) =>
     {
         const dir = ipcRenderer.sendSync("PICK_DIR") as string;
@@ -75,7 +84,12 @@ const App: React.FunctionComponent<Props> = function (props)
     }, [])
 
     const handleProgress = useCallback(({ totalCount, successCount, failCount }) => {
-
+        setProgress({
+            total: totalCount,
+            sucess: successCount,
+            failed: failCount,
+            progress: Number(((successCount + failCount) / totalCount * 100).toFixed(0))
+        })
     }, [])
 
     const handleFormFinish = useCallback((values: FormData) =>
@@ -140,12 +154,12 @@ const App: React.FunctionComponent<Props> = function (props)
                             parser={value => Number(value.replace('%', ''))}
                         />
                     </Form.Item>
-                    <Form.Item>
+                    {/* <Form.Item>
                         <Checkbox
                             checked={hasCorp}
                             onChange={(e) => setHasCorp(e.target.checked)}
                         >裁剪图片</Checkbox>
-                    </Form.Item>
+                    </Form.Item> */}
                     {
                         hasCorp ?
                         <Row gutter={[ 24, 0 ]}>
@@ -214,7 +228,7 @@ const App: React.FunctionComponent<Props> = function (props)
                                 <Form.Item
                                     label="宽度"
                                     name={[ "resize", "width" ]}
-                                    initialValue={100}
+                                    initialValue={640}
                                 >
                                     <InputNumber
                                         min={1}
@@ -226,7 +240,7 @@ const App: React.FunctionComponent<Props> = function (props)
                                 <Form.Item
                                     label="高度"
                                     name={[ "resize", "height" ]}
-                                    initialValue={0}
+                                    initialValue={360}
                                 >
                                     <InputNumber
                                         min={0}
@@ -244,6 +258,7 @@ const App: React.FunctionComponent<Props> = function (props)
                 >
                     执行
                 </Button>
+                <Progress percent={progress.progress} />
             </Spin>
         </div>
     )
